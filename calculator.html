@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ピンク電卓</title>
+  <style>
+    :root {
+      --page-bg: #1b1d22;
+      --card-bg: #161824;
+      --card-border: #565b72;
+      --space-purple: rgba(160, 78, 255, 0.28);
+      --space-pink: rgba(255, 0, 127, 0.28);
+      --space-blue: rgba(80, 170, 255, 0.2);
+      --space-star: rgba(255, 255, 255, 0.72);
+      --display-bg: #101113;
+      --display-line: #4b4f56;
+      --display-main: #ffffff;
+      --display-sub: #b8bdc6;
+      --number-bg: #050506;
+      --number-text: #ffffff;
+      --number-top-light: rgba(255, 255, 255, 0.22);
+      --number-depth: rgba(0, 0, 0, 0.85);
+      --display-number-depth: rgba(255, 0, 127, 0.36);
+      --operator-bg: #151619;
+      --operator-text: #ffffff;
+      --equal-bg: #ff007f;
+      --equal-text: #ffffff;
+      --clear-bg: #24262b;
+      --clear-text: #ffffff;
+      --tax-bg: #1d1f24;
+      --tax-text: #ffffff;
+      --history-bg: #62666f;
+      --history-border: #878c95;
+      --currency-bg: rgba(8, 9, 14, 0.72);
+      --currency-border: rgba(255, 255, 255, 0.2);
+      --currency-field-bg: #050506;
+      --muted-text: #eef0f4;
+      --button-shadow: rgba(0, 0, 0, 0.42);
+      --focus-ring: #ffffff;
+      --star-color: #ffffff;
+      --star-accent: #ff007f;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: var(--page-bg);
+      color: var(--number-text);
+      font-family: "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .calculator {
+      width: min(100%, 560px);
+      position: relative;
+      padding: 22px;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 14% 18%, var(--space-pink) 0 9%, transparent 22%),
+        radial-gradient(circle at 82% 12%, var(--space-blue) 0 8%, transparent 21%),
+        radial-gradient(circle at 68% 82%, var(--space-purple) 0 12%, transparent 26%),
+        radial-gradient(circle at 10% 74%, var(--space-star) 0 1px, transparent 2px),
+        radial-gradient(circle at 22% 38%, var(--space-star) 0 1px, transparent 2px),
+        radial-gradient(circle at 36% 12%, rgba(255, 255, 255, 0.45) 0 1px, transparent 2px),
+        radial-gradient(circle at 48% 66%, rgba(255, 255, 255, 0.62) 0 1px, transparent 2px),
+        radial-gradient(circle at 62% 32%, rgba(255, 255, 255, 0.5) 0 1px, transparent 2px),
+        radial-gradient(circle at 76% 58%, var(--space-star) 0 1px, transparent 2px),
+        radial-gradient(circle at 91% 78%, rgba(255, 255, 255, 0.56) 0 1px, transparent 2px),
+        linear-gradient(145deg, #2c2f3d 0%, var(--card-bg) 48%, #0d0f17 100%);
+      box-shadow: 0 24px 56px rgba(0, 0, 0, 0.36);
+    }
+
+    .calculator::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.28) 0 1px, transparent 1.5px),
+        radial-gradient(circle, rgba(255, 255, 255, 0.18) 0 1px, transparent 1.5px);
+      background-position: 0 0, 18px 24px;
+      background-size: 42px 42px, 58px 58px;
+      opacity: 0.7;
+    }
+
+    .calculator > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .display {
+      min-height: 112px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding: 18px 20px;
+      border-radius: 8px;
+      border: 1px solid var(--display-line);
+      background: var(--display-bg);
+      text-align: right;
+      overflow: hidden;
+    }
+
+    .expression {
+      position: relative;
+      z-index: 1;
+      min-height: 22px;
+      color: var(--display-sub);
+      font-size: 0.88rem;
+      font-weight: 500;
+      line-height: 1.3;
+      word-break: break-all;
+    }
+
+    .result {
+      position: relative;
+      z-index: 1;
+      color: var(--display-main);
+      font-size: clamp(2rem, 8vw, 3rem);
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0;
+      text-shadow:
+        0 1px 0 var(--number-top-light),
+        0 3px 0 rgba(0, 0, 0, 0.34),
+        0 10px 18px var(--display-number-depth);
+      word-break: break-all;
+    }
+
+    .stars {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .star {
+      position: absolute;
+      top: 64%;
+      left: 50%;
+      color: var(--star-color);
+      font-size: 1rem;
+      opacity: 0;
+      text-shadow: 0 0 14px var(--star-accent);
+      animation: star-pop 900ms ease-out forwards;
+    }
+
+    .star.accent {
+      color: var(--star-accent);
+    }
+
+    @keyframes star-pop {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.4) rotate(0deg);
+      }
+
+      22% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0;
+        transform: translate(var(--star-x), var(--star-y)) scale(1.18) rotate(24deg);
+      }
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 11px;
+    }
+
+    button {
+      min-height: 54px;
+      border: 0;
+      border-radius: 8px;
+      box-shadow: 0 3px 0 var(--button-shadow);
+      cursor: pointer;
+      font: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0;
+      transition: transform 120ms ease, filter 120ms ease, box-shadow 120ms ease;
+      touch-action: manipulation;
+    }
+
+    button:hover {
+      filter: brightness(0.98);
+    }
+
+    button:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 var(--button-shadow);
+    }
+
+    button:focus-visible {
+      outline: 3px solid var(--focus-ring);
+      outline-offset: 2px;
+    }
+
+    .number {
+      background: var(--number-bg);
+      color: var(--number-text);
+      text-shadow:
+        0 1px 0 var(--number-top-light),
+        0 2px 0 #3a3a3d,
+        0 4px 0 #111113,
+        0 8px 14px var(--number-depth);
+    }
+
+    .operator {
+      background: var(--operator-bg);
+      color: var(--operator-text);
+    }
+
+    .equal {
+      grid-column: span 1;
+      background: var(--equal-bg);
+      color: var(--equal-text);
+    }
+
+    .clear {
+      background: var(--clear-bg);
+      color: var(--clear-text);
+    }
+
+    .tax {
+      background: var(--tax-bg);
+      color: var(--tax-text);
+      font-size: 1rem;
+    }
+
+    .zero {
+      grid-column: span 2;
+    }
+
+    .currency {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid var(--currency-border);
+      border-radius: 8px;
+      background: var(--currency-bg);
+    }
+
+    .currency-title {
+      margin: 0 0 10px;
+      color: var(--muted-text);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .currency-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      gap: 8px;
+      align-items: end;
+    }
+
+    .currency-field {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .currency-field label {
+      color: var(--display-sub);
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .currency-select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--display-line);
+      border-radius: 8px;
+      background: var(--currency-field-bg);
+      color: var(--number-text);
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0;
+      padding: 0 10px;
+    }
+
+    .currency-swap,
+    .currency-convert {
+      min-height: 42px;
+      font-size: 0.86rem;
+    }
+
+    .currency-swap {
+      padding: 0 14px;
+      background: var(--operator-bg);
+      color: var(--operator-text);
+    }
+
+    .currency-convert {
+      width: 100%;
+      margin-top: 8px;
+      background: var(--equal-bg);
+      color: var(--equal-text);
+    }
+
+    .currency-rate {
+      margin: 8px 0 0;
+      color: var(--display-sub);
+      font-size: 0.7rem;
+      line-height: 1.35;
+    }
+
+    .history {
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid var(--history-border);
+      border-radius: 8px;
+      background: var(--history-bg);
+    }
+
+    .history-title {
+      margin: 0 0 8px;
+      color: var(--muted-text);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 116px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      min-height: 24px;
+      color: #ffffff;
+      font-size: 0.82rem;
+      line-height: 1.35;
+      word-break: break-all;
+    }
+
+    .history-empty {
+      color: var(--muted-text);
+    }
+
+    @media (max-width: 380px) {
+      body {
+        padding: 12px;
+      }
+
+      .calculator {
+        padding: 14px;
+      }
+
+      .buttons {
+        gap: 8px;
+      }
+
+      .currency-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .currency-swap {
+        width: 100%;
+      }
+
+      button {
+        min-height: 52px;
+        font-size: 1.08rem;
+      }
+
+      .tax {
+        font-size: 0.92rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="calculator" aria-label="電卓">
+    <section class="display" aria-live="polite">
+      <div id="expression" class="expression">計算式</div>
+      <div id="display" class="result">0</div>
+      <div id="stars" class="stars" aria-hidden="true"></div>
+    </section>
+
+    <div class="buttons">
+      <button class="clear" type="button" onclick="clearAll()" aria-label="クリア">C</button>
+      <button class="tax" type="button" onclick="handleTax('include')" aria-label="税込み">税込</button>
+      <button class="tax" type="button" onclick="handleTax('exclude')" aria-label="税抜き">税抜</button>
+      <button class="operator" type="button" onclick="handleOperator('÷')" aria-label="割り算">÷</button>
+
+      <button class="number" type="button" onclick="handleNumber('7')">7</button>
+      <button class="number" type="button" onclick="handleNumber('8')">8</button>
+      <button class="number" type="button" onclick="handleNumber('9')">9</button>
+      <button class="operator" type="button" onclick="handleOperator('×')" aria-label="掛け算">×</button>
+
+      <button class="number" type="button" onclick="handleNumber('4')">4</button>
+      <button class="number" type="button" onclick="handleNumber('5')">5</button>
+      <button class="number" type="button" onclick="handleNumber('6')">6</button>
+      <button class="operator" type="button" onclick="handleOperator('ー')" aria-label="引き算">ー</button>
+
+      <button class="number" type="button" onclick="handleNumber('1')">1</button>
+      <button class="number" type="button" onclick="handleNumber('2')">2</button>
+      <button class="number" type="button" onclick="handleNumber('3')">3</button>
+      <button class="operator" type="button" onclick="handleOperator('＋')" aria-label="足し算">＋</button>
+
+      <button class="number zero" type="button" onclick="handleNumber('0')">0</button>
+      <button class="number" type="button" onclick="handleNumber('.')">.</button>
+      <button class="equal" type="button" onclick="calculate()" aria-label="計算する">=</button>
+    </div>
+
+    <section class="currency" aria-label="通貨変換">
+      <p class="currency-title">通貨変換</p>
+      <div class="currency-grid">
+        <div class="currency-field">
+          <label for="fromCurrency">変換元</label>
+          <select id="fromCurrency" class="currency-select">
+            <option value="JPY" selected>JPY 日本円</option>
+            <option value="USD">USD 米ドル</option>
+            <option value="EUR">EUR ユーロ</option>
+            <option value="GBP">GBP 英ポンド</option>
+            <option value="CNY">CNY 人民元</option>
+            <option value="KRW">KRW 韓国ウォン</option>
+            <option value="AUD">AUD 豪ドル</option>
+            <option value="CAD">CAD カナダドル</option>
+            <option value="CHF">CHF スイスフラン</option>
+            <option value="HKD">HKD 香港ドル</option>
+            <option value="SGD">SGD シンガポールドル</option>
+            <option value="THB">THB タイバーツ</option>
+            <option value="TWD">TWD 台湾ドル</option>
+            <option value="INR">INR インドルピー</option>
+            <option value="BRL">BRL ブラジルレアル</option>
+            <option value="MXN">MXN メキシコペソ</option>
+            <option value="NZD">NZD NZドル</option>
+          </select>
+        </div>
+
+        <button class="currency-swap" type="button" onclick="swapCurrencies()" aria-label="通貨を入れ替え">⇄</button>
+
+        <div class="currency-field">
+          <label for="toCurrency">変換先</label>
+          <select id="toCurrency" class="currency-select">
+            <option value="JPY">JPY 日本円</option>
+            <option value="USD" selected>USD 米ドル</option>
+            <option value="EUR">EUR ユーロ</option>
+            <option value="GBP">GBP 英ポンド</option>
+            <option value="CNY">CNY 人民元</option>
+            <option value="KRW">KRW 韓国ウォン</option>
+            <option value="AUD">AUD 豪ドル</option>
+            <option value="CAD">CAD カナダドル</option>
+            <option value="CHF">CHF スイスフラン</option>
+            <option value="HKD">HKD 香港ドル</option>
+            <option value="SGD">SGD シンガポールドル</option>
+            <option value="THB">THB タイバーツ</option>
+            <option value="TWD">TWD 台湾ドル</option>
+            <option value="INR">INR インドルピー</option>
+            <option value="BRL">BRL ブラジルレアル</option>
+            <option value="MXN">MXN メキシコペソ</option>
+            <option value="NZD">NZD NZドル</option>
+          </select>
+        </div>
+      </div>
+      <button class="currency-convert" type="button" onclick="convertCurrency()">変換</button>
+      <p class="currency-rate">2026-06-17 更新のUSD基準レートを使用</p>
+    </section>
+
+    <section class="history" aria-label="計算履歴">
+      <p class="history-title">計算履歴</p>
+      <div id="historyList" class="history-list">
+        <div class="history-item history-empty">まだ履歴はありません</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const display = document.getElementById("display");
+    const expression = document.getElementById("expression");
+    const historyList = document.getElementById("historyList");
+    const stars = document.getElementById("stars");
+    const fromCurrency = document.getElementById("fromCurrency");
+    const toCurrency = document.getElementById("toCurrency");
+    const taxRate = 0.1;
+
+    let firstNumber = null;
+    let operator = null;
+    let isNewInput = true;
+    let historyCount = 0;
+
+    const currencyRates = {
+      USD: 1,
+      JPY: 160.357421,
+      EUR: 0.861314,
+      GBP: 0.744885,
+      CNY: 6.769763,
+      KRW: 1508.825189,
+      AUD: 1.414641,
+      CAD: 1.399083,
+      CHF: 0.793474,
+      HKD: 7.83281,
+      SGD: 1.281946,
+      THB: 32.515566,
+      TWD: 31.553811,
+      INR: 94.617681,
+      BRL: 5.067231,
+      MXN: 17.205389,
+      NZD: 1.714444
+    };
+
+    const currencyDecimals = {
+      JPY: 0,
+      KRW: 0
+    };
+
+    function formatNumber(value) {
+      return Number.isInteger(value) ? String(value) : String(parseFloat(value.toFixed(10)));
+    }
+
+    function formatCurrencyResult(value, currencyCode) {
+      const digits = currencyDecimals[currencyCode] ?? 2;
+      return String(parseFloat(value.toFixed(digits)));
+    }
+
+    function showStars() {
+      const positions = [
+        ["-132px", "-38px"],
+        ["-92px", "-76px"],
+        ["-42px", "-44px"],
+        ["18px", "-86px"],
+        ["70px", "-48px"],
+        ["122px", "-78px"],
+        ["6px", "-28px"]
+      ];
+
+      stars.textContent = "";
+
+      positions.forEach(function(position, index) {
+        const star = document.createElement("span");
+        star.className = index % 2 === 0 ? "star accent" : "star";
+        star.textContent = "\u2605";
+        star.style.setProperty("--star-x", position[0]);
+        star.style.setProperty("--star-y", position[1]);
+        star.style.animationDelay = index * 45 + "ms";
+        stars.appendChild(star);
+      });
+
+      window.setTimeout(function() {
+        stars.textContent = "";
+      }, 1200);
+    }
+
+    function addHistory(text) {
+      historyCount += 1;
+      const heart = historyCount % 3 === 0 ? " ♡" : "";
+      const item = document.createElement("div");
+      item.className = "history-item";
+      item.textContent = text + heart;
+
+      if (historyList.querySelector(".history-empty")) {
+        historyList.textContent = "";
+      }
+
+      historyList.prepend(item);
+
+      while (historyList.children.length > 5) {
+        historyList.removeChild(historyList.lastElementChild);
+      }
+    }
+
+    function updateExpression() {
+      if (firstNumber !== null && operator) {
+        expression.textContent = isNewInput
+          ? firstNumber + " " + operator
+          : firstNumber + " " + operator + " " + display.textContent;
+      } else {
+        expression.textContent = display.textContent === "0" ? "計算式" : display.textContent;
+      }
+    }
+
+    function handleNumber(number) {
+      if (display.textContent === "エラー") {
+        clearAll();
+      }
+
+      if (isNewInput) {
+        display.textContent = number === "." ? "0." : number;
+        isNewInput = false;
+      } else if (number === "." && display.textContent.includes(".")) {
+        return;
+      } else if (display.textContent === "0" && number !== ".") {
+        display.textContent = number;
+      } else {
+        display.textContent += number;
+      }
+
+      updateExpression();
+    }
+
+    function handleOperator(selectedOperator) {
+      if (display.textContent === "エラー") {
+        clearAll();
+        return;
+      }
+
+      if (firstNumber !== null && operator && !isNewInput) {
+        calculate();
+      }
+
+      firstNumber = display.textContent;
+      operator = selectedOperator;
+      isNewInput = true;
+      updateExpression();
+    }
+
+    function calculate() {
+      if (firstNumber === null || operator === null || isNewInput) {
+        return;
+      }
+
+      const secondNumber = display.textContent;
+      const a = parseFloat(firstNumber);
+      const b = parseFloat(secondNumber);
+      let result;
+
+      if (operator === "＋") {
+        result = a + b;
+      } else if (operator === "ー") {
+        result = a - b;
+      } else if (operator === "×") {
+        result = a * b;
+      } else if (operator === "÷") {
+        if (b === 0) {
+          display.textContent = "エラー";
+          expression.textContent = firstNumber + " " + operator + " " + secondNumber;
+          addHistory(firstNumber + " " + operator + " " + secondNumber + " = エラー");
+          firstNumber = null;
+          operator = null;
+          isNewInput = true;
+          return;
+        }
+        result = a / b;
+      }
+
+      const resultText = formatNumber(result);
+      expression.textContent = firstNumber + " " + operator + " " + secondNumber + " =";
+      display.textContent = resultText;
+      addHistory(firstNumber + " " + operator + " " + secondNumber + " = " + resultText);
+      showStars();
+      firstNumber = null;
+      operator = null;
+      isNewInput = true;
+    }
+
+    function clearAll() {
+      firstNumber = null;
+      operator = null;
+      isNewInput = true;
+      display.textContent = "0";
+      expression.textContent = "計算式";
+    }
+
+    function handleTax(mode) {
+      if (display.textContent === "エラー") {
+        clearAll();
+        return;
+      }
+
+      const value = parseFloat(display.textContent);
+
+      if (Number.isNaN(value)) {
+        return;
+      }
+
+      const result = mode === "include" ? value * (1 + taxRate) : value / (1 + taxRate);
+      const label = mode === "include" ? "税込" : "税抜";
+      const resultText = formatNumber(result);
+
+      expression.textContent = label + " " + display.textContent;
+      display.textContent = resultText;
+      addHistory(label + " " + value + " = " + resultText);
+      showStars();
+      firstNumber = null;
+      operator = null;
+      isNewInput = true;
+    }
+
+    function swapCurrencies() {
+      const currentFrom = fromCurrency.value;
+      fromCurrency.value = toCurrency.value;
+      toCurrency.value = currentFrom;
+    }
+
+    function convertCurrency() {
+      if (display.textContent === "エラー") {
+        clearAll();
+        return;
+      }
+
+      const amount = parseFloat(display.textContent);
+
+      if (Number.isNaN(amount)) {
+        return;
+      }
+
+      const from = fromCurrency.value;
+      const to = toCurrency.value;
+      const converted = (amount / currencyRates[from]) * currencyRates[to];
+      const resultText = formatCurrencyResult(converted, to);
+
+      expression.textContent = amount + " " + from + " → " + to;
+      display.textContent = resultText;
+      addHistory(amount + " " + from + " → " + resultText + " " + to);
+      showStars();
+      firstNumber = null;
+      operator = null;
+      isNewInput = true;
+    }
+  </script>
+</body>
+</html>
